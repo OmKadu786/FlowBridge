@@ -351,7 +351,7 @@ function App() {
 
                 {step === 3 ? (
                   <button className="btn btn-success" style={{ width: '100%', marginTop: 20 }} onClick={handleSync}>
-                    <Send size={18} /> Sync & Generate Actions
+                    <Send size={18} /> Sync & Generate Invoice
                   </button>
                 ) : step === 4 ? (
                   <div className="flex-center" style={{ flexDirection: 'column', gap: 16, padding: '20px 0' }}>
@@ -366,21 +366,28 @@ function App() {
             {step === 5 && syncData && (
               <Card title="Automation Successful!" subtitle="Invoices generated and synced to Xero" icon={CheckCircle2} color="green">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div className="status-item-enhanced">
-                    <div className="status-icon success"><Database size={20} /></div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--gray-900)' }}>Xero Contact & Invoice Created</div>
-                      <div style={{ fontSize: 13, color: 'var(--gray-500)' }}>Ref: {syncData.invoice_number} · ID: {syncData.xero_contact_id}</div>
-                    </div>
-                  </div>
-                  <div className="status-item-enhanced">
-                    <div className="status-icon blue"><Send size={20} /></div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--gray-900)' }}>Confirmation Email Sent</div>
-                      <div style={{ fontSize: 13, color: 'var(--gray-500)' }}>To: {syncData.email_sent_to}</div>
-                    </div>
-                  </div>
+              <div className="status-item-enhanced">
+                <div className="status-icon success"><Database size={20} /></div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--gray-900)' }}>Invoice created successfully</div>
+                  <div style={{ fontSize: 13, color: 'var(--gray-500)' }}>Ref: {syncData.invoice_number} · ID: {syncData.xero_contact_id}</div>
                 </div>
+              </div>
+              <div className="status-item-enhanced">
+                <div className="status-icon blue"><Send size={20} /></div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--gray-900)' }}>Email sent to client</div>
+                  <div style={{ fontSize: 13, color: 'var(--gray-500)' }}>Sent to: {syncData.email_sent_to}</div>
+                </div>
+              </div>
+              <div className="status-item-enhanced">
+                <div className="status-icon purple"><FileSpreadsheet size={20} /></div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--gray-900)' }}>Invoice saved locally</div>
+                  <div style={{ fontSize: 13, color: 'var(--gray-500)' }}>Path: {syncData.pdf_path || './invoices/'}</div>
+                </div>
+              </div>
+            </div>
                 <button className="btn reset-btn" onClick={handleReset}>
                    Run Another Task
                 </button>
