@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Upload, ChevronRight, CheckCircle2, AlertCircle, FileSpreadsheet, PlayCircle, Loader2, Sparkles, Send, Database, Search } from 'lucide-react';
 import { MOCK_ANALYZE_RESPONSE, MOCK_SYNC_RESPONSE } from './mockData';
 import './index.css';
@@ -7,7 +7,7 @@ const Card = ({ title, subtitle, icon: Icon, children, color = "blue", style, cl
   <div className={`card ${className}`} style={style}>
     <div className="card-header">
       <div className={`card-icon ${color}`}>
-        <Icon size={20} />
+        <Icon size={20} aria-hidden="true" />
       </div>
       <div>
         <div className="card-title">{title}</div>
@@ -30,10 +30,10 @@ const SettingsModal = ({ isOpen, onClose, config, onSave }) => {
       <div className="modal-content card" style={{ maxWidth: 500, width: '90%', animation: 'popIn 0.3s ease-out' }}>
         <div className="card-header flex-between">
           <div className="flex-center gap-3">
-            <div className="card-icon blue"><Database size={20} /></div>
+            <div className="card-icon blue"><Database size={20} aria-hidden="true" /></div>
             <div className="card-title">Backend Configuration</div>
           </div>
-          <button className="btn-icon" onClick={onClose}><AlertCircle size={20} style={{ transform: 'rotate(45deg)' }} /></button>
+          <button className="btn-icon" onClick={onClose} aria-label="Close settings"><AlertCircle size={20} style={{ transform: 'rotate(45deg)' }} aria-hidden="true" /></button>
         </div>
         <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
@@ -72,15 +72,26 @@ function App() {
   const [step, setStep] = useState(1); // 1: Upload, 2: Parsing, 3: Results, 4: Syncing, 5: Done
   const [analysisData, setAnalysisData] = useState(null);
   const [syncData, setSyncData] = useState(null);
+  const [error, setError] = useState(null);
   const [isDragActive, setIsDragActive] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    return () => { isMounted.current = false; };
+  }, []);
+
   const [history, setHistory] = useState(() => {
     const saved = localStorage.getItem('flowbridge_history');
     return saved ? JSON.parse(saved) : [];
   });
   const [config, setConfig] = useState(() => {
     const saved = localStorage.getItem('flowbridge_config');
-    return saved ? JSON.parse(saved) : { analyzeUrl: '', syncUrl: '' };
+    return saved ? JSON.parse(saved) : { 
+      analyzeUrl: import.meta.env?.VITE_ANALYZE_WEBHOOK || '', 
+      syncUrl: import.meta.env?.VITE_SYNC_WEBHOOK || '' 
+    };
   });
 
   const saveConfig = (newConfig) => {
@@ -107,6 +118,7 @@ function App() {
   const handleAnalyze = async () => {
     if (!file) return;
     setStep(2);
+    setError(null);
 
     try {
       if (config.analyzeUrl) {
@@ -115,20 +127,22 @@ function App() {
         const res = await fetch(config.analyzeUrl, { method: 'POST', body: formData });
         if (res.ok) {
           const data = await res.json();
-          setAnalysisData(data);
+          if (isMounted.current) setAnalysisData(data);
         } else {
           throw new Error('Analyze webhook failed');
         }
       } else {
         await new Promise(r => setTimeout(r, 2000));
-        setAnalysisData(MOCK_ANALYZE_RESPONSE);
+        if (isMounted.current) setAnalysisData(MOCK_ANALYZE_RESPONSE);
       }
-      setStep(3);
+      if (isMounted.current) setStep(3);
     } catch (err) {
       console.error(err);
-      alert('Analysis failed. Using mock data for demo.');
-      setAnalysisData(MOCK_ANALYZE_RESPONSE);
-      setStep(3);
+      if (isMounted.current) {
+        setError('Analysis failed. Using mock data for demo.');
+        setAnalysisData(MOCK_ANALYZE_RESPONSE);
+        setStep(3);
+      }
     }
   };
 
@@ -145,6 +159,7 @@ function App() {
 
   const handleSync = async () => {
     setStep(4);
+    setError(null);
     try {
       if (config.syncUrl) {
         const res = await fetch(config.syncUrl, { 
@@ -154,6 +169,7 @@ function App() {
         });
         if (res.ok) {
           const data = await res.json();
+          if (!isMounted.current) return;
           setSyncData(data);
           addHistory({
             id: Date.now(),
@@ -167,6 +183,7 @@ function App() {
         }
       } else {
         await new Promise(r => setTimeout(r, 2000));
+        if (!isMounted.current) return;
         setSyncData(MOCK_SYNC_RESPONSE);
         addHistory({
           id: Date.now(),
@@ -176,12 +193,14 @@ function App() {
           status: 'Success'
         });
       }
-      setStep(5);
+      if (isMounted.current) setStep(5);
     } catch (err) {
       console.error(err);
-      alert('Sync failed. Using mock data for demo.');
-      setSyncData(MOCK_SYNC_RESPONSE);
-      setStep(5);
+      if (isMounted.current) {
+        setError('Sync failed. Using mock data for demo.');
+        setSyncData(MOCK_SYNC_RESPONSE);
+        setStep(5);
+      }
     }
   };
 
@@ -189,6 +208,7 @@ function App() {
     setFile(null);
     setAnalysisData(null);
     setSyncData(null);
+    setError(null);
     setStep(1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -236,6 +256,13 @@ function App() {
           </div>
         )}
 
+        {error && (
+          <div className="error-banner">
+            <AlertCircle size={20} aria-hidden="true" />
+            <span>{error}</span>
+          </div>
+        )}
+
         <div className="dashboard-grid">
           <div className="main-content">
             {/* STEP 1: Upload & Process */}
@@ -243,18 +270,21 @@ function App() {
               <Card title="Step 1 — Upload Your Data" subtitle="Select a file to begin AI analysis" icon={FileSpreadsheet} color="blue">
                 {step === 1 ? (
                   <>
-                    <div 
+                    <label 
                       className={`upload-zone ${isDragActive ? 'dragover' : ''}`}
                       onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
+                      htmlFor="file-upload"
+                      tabIndex={0}
+                      onKeyDown={(e) => { if (e.key === 'Enter') document.getElementById('file-upload').click() }}
                     >
-                      <input type="file" accept=".csv,.xlsx,.xls" onChange={handleFileChange} />
-                      <Upload size={32} className="upload-icon" />
-                      <h3>Drop your file here</h3>
+                      <input id="file-upload" type="file" accept=".csv,.xlsx,.xls" onChange={handleFileChange} style={{ display: 'none' }} />
+                      <Upload size={32} className="upload-icon" aria-hidden="true" />
+                      <h3>Drop your file here or click to browse</h3>
                       <p>Supports CSV, XLS, XLSX — up to 50 MB</p>
                       <div className="flex-center gap-2" style={{ marginTop: 14 }}>
                         <span className="file-chip">CSV</span> <span className="file-chip">XLSX</span>
                       </div>
-                    </div>
+                    </label>
                     {file && (
                       <div className="file-selected">
                         <CheckCircle2 size={16} /> <span>{file.name}</span>

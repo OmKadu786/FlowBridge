@@ -2,6 +2,12 @@
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
+## Configuration & Demo Mode
+By default, the application runs in **Demo Mode**, utilizing mock data. 
+To connect it to your n8n workflows, you have two options:
+1. **Via the UI:** Click the Settings icon in the header and paste your webhook URLs.
+2. **Via Environment Variables:** Copy `.env.example` to `.env` and set the `VITE_ANALYZE_WEBHOOK` and `VITE_SYNC_WEBHOOK` variables.
+
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)

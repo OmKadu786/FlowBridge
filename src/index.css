@@ -585,3 +585,23 @@ footer {
   .dashboard-grid { grid-template-columns: 1fr; }
   .sidebar { order: 2; }
 }
+
+/* Toast & Banner */
+.error-banner {
+  background: var(--red-100);
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 14px 20px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  animation: slideUp 0.3s ease-out;
+}
+.error-banner svg {
+  color: var(--red-500);
+  flex-shrink: 0;
+}
