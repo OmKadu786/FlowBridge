@@ -1,0 +1,119 @@
+{
+  "name": "FlowBridge - Sync to Xero",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sync",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "sync-webhook"
+    },
+    {
+      "parameters": {
+        "resource": "contact",
+        "name": "={{$json.recommended_record.customer_name}}",
+        "email": "={{$json.recommended_record.email}}",
+        "additionalFields": {}
+      },
+      "name": "Xero - Create Contact",
+      "type": "n8n-nodes-base.xero",
+      "typeVersion": 1,
+      "position": [450, 300],
+      "credentials": {
+        "xeroOAuth2Api": {
+          "id": "YOUR_XERO_CRED_ID",
+          "name": "Xero account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "invoice",
+        "contactId": "={{$node[\"Xero - Create Contact\"].json[\"ContactID\"]}}",
+        "lineItems": {
+          "lineItem": [
+            {
+              "description": "Professional Services",
+              "quantity": 1,
+              "unitAmount": "={{$node[\"Webhook\"].json[\"recommended_record\"][\"invoice_amount\"].replace(/[^0-9.]/g, '')}}"
+            }
+          ]
+        },
+        "options": {
+          "status": "AUTHORISED"
+        }
+      },
+      "name": "Xero - Create Invoice",
+      "type": "n8n-nodes-base.xero",
+      "typeVersion": 1,
+      "position": [650, 300],
+      "credentials": {
+        "xeroOAuth2Api": {
+          "id": "YOUR_XERO_CRED_ID",
+          "name": "Xero account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "toEmail": "={{$node[\"Webhook\"].json[\"recommended_record\"][\"email\"]}}",
+        "subject": "Invoice from FlowBridge",
+        "text": "Please find your invoice attached.",
+        "attachments": "file",
+        "options": {}
+      },
+      "name": "Gmail - Send Invoice",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 1,
+      "position": [850, 300],
+      "credentials": {
+        "gmailOAuth2Api": {
+          "id": "YOUR_GMAIL_CRED_ID",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Xero - Create Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Xero - Create Contact": {
+      "main": [
+        [
+          {
+            "node": "Xero - Create Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Xero - Create Invoice": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Send Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

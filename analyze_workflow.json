@@ -1,0 +1,78 @@
+{
+  "name": "FlowBridge - Analyze Data",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "analyze",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "analyze-webhook"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceKey": "file",
+        "options": {}
+      },
+      "name": "Parse File",
+      "type": "n8n-nodes-base.spreadsheetFile",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4-turbo-preview",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Analyze this business data and return a JSON object with: 1. detected_entity (string), 2. field_mappings (array of {source, mapped_to, confidence}), 3. duplicates (array of {field, value, occurrences}), 4. recommended_record (object with cleanest data), 5. total_rows (int). Data: {{$json}}"
+            }
+          ]
+        },
+        "options": {
+          "responseFormat": "json_object"
+        }
+      },
+      "name": "OpenAI - AI Analysis",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [650, 300],
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_OPENAI_CRED_ID",
+          "name": "OpenAI account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse File": {
+      "main": [
+        [
+          {
+            "node": "OpenAI - AI Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
