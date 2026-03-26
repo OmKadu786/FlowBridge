@@ -238,14 +238,8 @@ function App() {
 
       <section className="hero">
         <div className="hero-eyebrow"><Sparkles size={14} /> AI-Powered Automation</div>
-        <h1>Turn messy business data<br />into <span className="gradient-text">automated actions</span> instantly</h1>
+        <h1>Transform complex data<br />into <span className="gradient-text">intelligent workflows</span> seamlessly</h1>
         <p>Upload a CSV or Excel file, let AI analyze it, then trigger real workflows — invoices, emails, and more.</p>
-        <div className="hero-tags">
-          <div className="hero-tag"><strong>📊</strong> CSV / Excel</div>
-          <div className="hero-tag"><strong>🤖</strong> AI Mapping</div>
-          <div className="hero-tag"><strong>⚙️</strong> n8n Workflows</div>
-          <div className="hero-tag"><strong>📧</strong> Auto Email</div>
-        </div>
       </section>
 
       <main className="main-container">
@@ -441,21 +435,7 @@ function App() {
               </div>
             </Card>
 
-            <Card title="Smart Mapping" subtitle="Current AI confidence" icon={Sparkles} color="purple" className="sidebar-card">
-              <div style={{ padding: '10px 0' }}>
-                <p style={{ fontSize: 13, color: 'var(--gray-600)', marginBottom: 12 }}>FlowBridge AI has saved you <strong>12.4 hours</strong> of manual mapping this week.</p>
-                <div className="stats-box">
-                  <div className="stat">
-                    <div className="stat-value">94%</div>
-                    <div className="stat-label">Avg. Accuracy</div>
-                  </div>
-                  <div className="stat">
-                    <div className="stat-value">4.2s</div>
-                    <div className="stat-label">Analysis Speed</div>
-                  </div>
-                </div>
-              </div>
-            </Card>
+
           </aside>
         </div>
       </main>
