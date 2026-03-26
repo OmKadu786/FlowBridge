@@ -37,7 +37,7 @@ const SettingsModal = ({ isOpen, onClose, config, onSave }) => {
         </div>
         <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--gray-700)' }}>n8n Analyze Webhook URL</label>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--text-secondary)' }}>n8n Analyze Webhook URL</label>
             <input 
               type="text" 
               className="input-field" 
@@ -47,7 +47,7 @@ const SettingsModal = ({ isOpen, onClose, config, onSave }) => {
             />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--gray-700)' }}>n8n Sync Webhook URL</label>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--text-secondary)' }}>n8n Sync Webhook URL</label>
             <input 
               type="text" 
               className="input-field" 
@@ -56,10 +56,10 @@ const SettingsModal = ({ isOpen, onClose, config, onSave }) => {
               onChange={(e) => setLocalConfig({ ...localConfig, syncUrl: e.target.value })}
             />
           </div>
-          <p style={{ fontSize: 12, color: 'var(--gray-400)' }}>Enter your n8n workflow URLs here. If URLs are empty, the app will use mock data for demonstrations.</p>
+          <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>Enter your n8n workflow URLs here. If URLs are empty, the app will use mock data for demonstrations.</p>
           <div className="flex-center gap-3" style={{ marginTop: 8 }}>
             <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => onSave(localConfig)}>Save Configuration</button>
-            <button className="btn" style={{ flex: 1, background: 'var(--gray-100)', color: 'var(--gray-700)' }} onClick={onClose}>Cancel</button>
+            <button className="btn" style={{ flex: 1, background: 'var(--bg-surface)', color: 'var(--text-secondary)', border: '1px solid var(--border-glass)' }} onClick={onClose}>Cancel</button>
           </div>
         </div>
       </div>
@@ -107,12 +107,16 @@ function App() {
   };
 
   const handleFileChange = (e) => { e.target.files?.[0] && setFile(e.target.files[0]); };
-  const handleDragOver = (e) => { e.preventDefault(); setIsDragActive(true); };
-  const handleDragLeave = () => setIsDragActive(false);
+  const preventDefaults = (e) => { e.preventDefault(); e.stopPropagation(); };
+  const handleDragEnter = (e) => { preventDefaults(e); setIsDragActive(true); };
+  const handleDragOver = (e) => { preventDefaults(e); setIsDragActive(true); };
+  const handleDragLeave = (e) => { preventDefaults(e); setIsDragActive(false); };
   const handleDrop = (e) => {
-    e.preventDefault();
+    preventDefaults(e);
     setIsDragActive(false);
-    e.dataTransfer.files?.[0] && setFile(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files?.length > 0) {
+      setFile(e.dataTransfer.files[0]);
+    }
   };
 
   const handleAnalyze = async () => {
@@ -257,12 +261,14 @@ function App() {
               <Card title="Step 1 — Upload Your Data" subtitle="Select a file to begin AI analysis" icon={FileSpreadsheet} color="blue">
                 {step === 1 ? (
                   <>
-                    <label 
+                    <div 
                       className={`upload-zone ${isDragActive ? 'dragover' : ''}`}
-                      onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
-                      htmlFor="file-upload"
+                      onDragEnter={handleDragEnter} onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
+                      onClick={() => document.getElementById('file-upload').click()}
                       tabIndex={0}
-                      onKeyDown={(e) => { if (e.key === 'Enter') document.getElementById('file-upload').click() }}
+                      role="button"
+                      aria-label="Upload file by clicking or dragging"
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') document.getElementById('file-upload').click() }}
                     >
                       <input id="file-upload" type="file" accept=".csv,.xlsx,.xls" onChange={handleFileChange} style={{ display: 'none' }} />
                       <Upload size={32} className="upload-icon" aria-hidden="true" />
@@ -271,7 +277,7 @@ function App() {
                       <div className="flex-center gap-2" style={{ marginTop: 14 }}>
                         <span className="file-chip">CSV</span> <span className="file-chip">XLSX</span>
                       </div>
-                    </label>
+                    </div>
                     {file && (
                       <div className="file-selected">
                         <CheckCircle2 size={16} /> <span>{file.name}</span>
@@ -288,7 +294,7 @@ function App() {
                       </button>
                       <button 
                         className="btn" 
-                        style={{ background: 'var(--gray-100)', color: 'var(--gray-700)' }}
+                        style={{ background: 'var(--bg-surface)', color: 'var(--text-secondary)', border: '1px solid var(--border-glass)' }}
                         onClick={downloadSample}
                       >
                         Sample CSV
@@ -298,11 +304,11 @@ function App() {
                 ) : step === 2 ? (
                   <div className="flex-center" style={{ flexDirection: 'column', gap: 16, padding: '40px 0' }}>
                     <div className="loader-container">
-                      <Loader2 size={48} className="spinner" style={{ color: 'var(--blue-500)', borderTopColor: 'transparent' }} />
+                      <Loader2 size={48} className="spinner" style={{ color: 'var(--accent-2)' }} />
                       <div className="loader-sparkles"><Sparkles size={24} /></div>
                     </div>
-                    <h3 style={{ fontSize: 18, color: 'var(--gray-900)' }}>Analyzing data with AI…</h3>
-                    <p style={{ color: 'var(--gray-400)', fontSize: 14 }}>Detecting entities and resolving conflicts.</p>
+                    <h3 style={{ fontSize: 18, color: 'var(--text-primary)' }}>Analyzing data with AI…</h3>
+                    <p style={{ color: 'var(--text-muted)', fontSize: 14 }}>Detecting entities and resolving conflicts.</p>
                   </div>
                 ) : (
                     <div className="file-selected" style={{ marginTop: 0 }}>
@@ -315,7 +321,7 @@ function App() {
             {/* STEP 2: AI Results */}
             {step >= 3 && analysisData && (
               <Card title="Step 2 — AI Analysis Results" subtitle="Entity detected, fields mapped, conflicts flagged" icon={Search} color="purple">
-                <div style={{ padding: '4px 12px', background: 'var(--blue-50)', color: 'var(--blue-600)', display: 'inline-flex', borderRadius: 6, fontWeight: 700, fontSize: 13, marginBottom: 20 }}>
+                <div style={{ padding: '4px 12px', background: 'rgba(99,102,241,0.12)', color: 'var(--accent-2)', display: 'inline-flex', borderRadius: 6, fontWeight: 700, fontSize: 13, marginBottom: 20 }}>
                   <Database size={14} style={{ marginRight: 6 }} /> Entity: {analysisData.detected_entity}
                 </div>
 
@@ -372,8 +378,8 @@ function App() {
                   </button>
                 ) : step === 4 ? (
                   <div className="flex-center" style={{ flexDirection: 'column', gap: 16, padding: '20px 0' }}>
-                    <Loader2 size={32} className="spinner" style={{ color: 'var(--green-500)', borderTopColor: 'transparent' }} />
-                    <p style={{ color: 'var(--gray-900)', fontSize: 14, fontWeight: 600 }}>Firing automation workflows...</p>
+                    <Loader2 size={32} className="spinner" style={{ color: 'var(--accent-3)' }} />
+                    <p style={{ color: 'var(--text-primary)', fontSize: 14, fontWeight: 600 }}>Firing automation workflows...</p>
                   </div>
                 ) : null}
               </Card>
@@ -386,22 +392,22 @@ function App() {
               <div className="status-item-enhanced">
                 <div className="status-icon success"><Database size={20} /></div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--gray-900)' }}>Invoice created successfully</div>
-                  <div style={{ fontSize: 13, color: 'var(--gray-500)' }}>Ref: {syncData.invoice_number} · ID: {syncData.xero_contact_id}</div>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>Invoice created successfully</div>
+                  <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Ref: {syncData.invoice_number} · ID: {syncData.xero_contact_id}</div>
                 </div>
               </div>
               <div className="status-item-enhanced">
                 <div className="status-icon blue"><Send size={20} /></div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--gray-900)' }}>Email sent to client</div>
-                  <div style={{ fontSize: 13, color: 'var(--gray-500)' }}>Sent to: {syncData.email_sent_to}</div>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>Email sent to client</div>
+                  <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Sent to: {syncData.email_sent_to}</div>
                 </div>
               </div>
               <div className="status-item-enhanced">
                 <div className="status-icon purple"><FileSpreadsheet size={20} /></div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--gray-900)' }}>Invoice saved locally</div>
-                  <div style={{ fontSize: 13, color: 'var(--gray-500)' }}>Path: {syncData.pdf_path || './invoices/'}</div>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>Invoice saved locally</div>
+                  <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Path: {syncData.pdf_path || './invoices/'}</div>
                 </div>
               </div>
             </div>
@@ -417,7 +423,7 @@ function App() {
             <Card title="Activity Log" subtitle="Recent automations" icon={Database} className="sidebar-card">
               <div className="history-list">
                 {history.length === 0 ? (
-                  <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--gray-400)', fontSize: 13 }}>
+                  <div style={{ padding: '20px 0', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
                     No recent activity
                   </div>
                 ) : (
@@ -426,7 +432,7 @@ function App() {
                       <div className="history-dot"></div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: 600, fontSize: 13 }}>{item.entity}</div>
-                        <div style={{ fontSize: 11, color: 'var(--gray-400)' }}>{item.action} • {item.time}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{item.action} • {item.time}</div>
                       </div>
                       <div className="status-badge success">{item.status}</div>
                     </div>
