@@ -225,7 +225,6 @@ function App() {
             <button className="btn-icon-text" onClick={() => setIsSettingsOpen(true)}>
               <Database size={16} /> <span>Settings</span>
             </button>
-            <div className="nav-badge">BETA</div>
           </div>
         </div>
       </header>
@@ -250,12 +249,6 @@ function App() {
       </section>
 
       <main className="main-container">
-        {!config.analyzeUrl && (
-          <div className="demo-notice">
-            <strong>⚠️ Demo Mode:</strong> Using mock data. Click <strong>Settings</strong> to connect to your n8n webhooks.
-          </div>
-        )}
-
         {error && (
           <div className="error-banner">
             <AlertCircle size={20} aria-hidden="true" />
