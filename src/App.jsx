@@ -137,10 +137,16 @@ function App() {
   const handleSync = async () => {
     setStep(4);
     try {
+      const payload = {
+        detected_entity: analysisData?.detected_entity || 'Dataset',
+        recommended_record: analysisData?.recommended_record || {},
+        admin_email: config.adminEmail || '',
+        unpaid_records: analysisData?.unpaid_records || []
+      };
       const res = await fetch(config.syncUrl, { 
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(analysisData) 
+        body: JSON.stringify(payload) 
       });
       if (res.ok) {
         const data = await res.json();
@@ -148,7 +154,7 @@ function App() {
         addHistory({
           id: Date.now(),
           entity: analysisData?.detected_entity || 'Batch Sync',
-          action: 'Synced to Production',
+          action: `Emailed ${data.emails_sent || 0} customers`,
           time: new Date().toLocaleTimeString(),
           status: 'Success'
         });
@@ -267,7 +273,12 @@ function App() {
 
                 {step === 3 && (
                   <button className="btn btn-success" style={{ width: '100%', marginTop: 32, padding: '16px' }} onClick={handleSync}>
-                    <Send size={20} /> Sync & Launch Business Workflow
+                    <Send size={20} /> Send Invoices for Unpaid Orders
+                    {analysisData.unpaid_records?.length > 0 && (
+                      <span style={{ marginLeft: 8, background: 'rgba(255,255,255,0.2)', padding: '2px 10px', borderRadius: 99, fontSize: 12, fontWeight: 800 }}>
+                        {analysisData.unpaid_records.length}
+                      </span>
+                    )}
                   </button>
                 )}
                 
@@ -280,24 +291,29 @@ function App() {
               </Card>
             )}
 
-            {/* STEP 3: Status */}
+            {/* STEP 3: Email Results */}
             {step === 5 && syncData && (
-              <Card title="Automation Successful!" subtitle="Batch synced to production" icon={CheckCircle2} color="green">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div className="status-item-enhanced">
-                    <div className="status-icon success"><Database size={20} /></div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 700, fontSize: 15 }}>Business Record Created</div>
-                      <div style={{ fontSize: 13, opacity: 0.6 }}>Reference: {syncData.invoice_number}</div>
+              <Card title="Invoices Sent!" subtitle={`${syncData.emails_sent || 0} emails delivered`} icon={CheckCircle2} color="green">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {syncData.email_results?.map((r, i) => (
+                    <div key={i} className="status-item-enhanced">
+                      <div className={`status-icon ${r.status === 'sent' || r.status === 'simulated' ? 'success' : 'blue'}`}>
+                        {r.status === 'sent' || r.status === 'simulated' ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 700, fontSize: 14 }}>{r.name}</div>
+                        <div style={{ fontSize: 12, opacity: 0.6 }}>{r.email} — {r.items_count} item(s)</div>
+                      </div>
+                      <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 99, textTransform: 'uppercase',
+                        background: r.status === 'sent' || r.status === 'simulated' ? 'var(--green-900)' : 'var(--amber-900)',
+                        color: r.status === 'sent' || r.status === 'simulated' ? 'var(--green-400)' : 'var(--amber-500)',
+                        border: `1px solid ${r.status === 'sent' || r.status === 'simulated' ? 'var(--green-border)' : 'var(--amber-border)'}`
+                      }}>{r.status}</span>
                     </div>
-                  </div>
-                  <div className="status-item-enhanced">
-                    <div className="status-icon success"><CheckCircle2 size={20} /></div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 700, fontSize: 15 }}>Client Notification Sent</div>
-                      <div style={{ fontSize: 13, opacity: 0.6 }}>Email: {syncData.email_sent_to}</div>
-                    </div>
-                  </div>
+                  ))}
+                  {(!syncData.email_results || syncData.email_results.length === 0) && (
+                    <div style={{ textAlign: 'center', padding: 20, color: 'var(--text-muted)' }}>No unpaid records found to email.</div>
+                  )}
                 </div>
                 <button className="btn btn-primary" style={{ width: '100%', marginTop: 24 }} onClick={handleReset}>
                   Process New Batch
