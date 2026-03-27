@@ -15,7 +15,7 @@ export const MOCK_ANALYZE_RESPONSE = {
   recommended_record: {
     customer_name: "Alice Johnson",
     email: "alice@example.com",
-    invoice_amount: "$4,200.00",
+    invoice_amount: "₹4,200.00",
   },
   cleaned_rows: 47,
   total_rows: 50,

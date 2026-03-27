@@ -70,7 +70,7 @@ def build_pandas_summary(df, detected_duplicates):
     for col in df.columns:
         if df[col].dtype in ['int64', 'float64']:
             if any(k in col.lower() for k in ['amount', 'price', 'total', 'cost', 'revenue', 'salary', 'fee', 'balance', 'quantity', 'qty']):
-                points.append(f"• Column '{col}': Total = {df[col].sum():,.2f}, Avg = {df[col].mean():,.2f}, Min = {df[col].min()}, Max = {df[col].max()}.")
+                points.append(f"• Column '{col}': Total = ₹{df[col].sum():,.2f}, Avg = ₹{df[col].mean():,.2f}, Min = ₹{df[col].min()}, Max = ₹{df[col].max()}.")
 
     # Duplicates
     if detected_duplicates:
@@ -256,7 +256,7 @@ First, figure out WHAT KIND of data this is (invoices? employee records? orders?
 Then write an "ai_summary" as SHORT BULLET POINTS (•) covering EVERYTHING relevant to THIS specific dataset. Adapt your analysis to the data — for example:
 - If it has payment/status columns: break down Paid vs Unpaid vs Overdue, list specific names
 - If it has dates: flag anything overdue or expired
-- If it has amounts/prices: show totals, averages, outliers
+- If it has amounts/prices: show totals, averages, outliers (Format all currency amounts in Indian Rupees with the ₹ symbol)
 - If it has categories: show the distribution
 - Always mention: duplicates found, missing data, and any red flags
 - End with 1 line of strategic advice
