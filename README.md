@@ -1,22 +1,58 @@
-# React + Vite
+# FlowBridge
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+FlowBridge is an intelligent data ingestion and processing application. It consists of a React frontend for file dragging, mapping, and reviewing, and a Python FastAPI backend for AI-powered auditing, duplicate detection, and automated syncing.
 
-## Configuration & Demo Mode
-By default, the application runs in **Demo Mode**, utilizing mock data. 
-To connect it to your n8n workflows, you have two options:
-1. **Via the UI:** Click the Settings icon in the header and paste your webhook URLs.
-2. **Via Environment Variables:** Copy `.env.example` to `.env` and set the `VITE_ANALYZE_WEBHOOK` and `VITE_SYNC_WEBHOOK` variables.
+## Project Structure
 
-Currently, two official plugins are available:
+- `src/` - React frontend (Vite, Tailwind-like custom CSS)
+- `backend/` - Python FastAPI backend
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Setup Instructions
 
-## React Compiler
+### 1. Frontend (React + Vite)
+The front end handles file uploads, mapping verification, and the sync confirmation UI.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+# Install dependencies
+npm install
 
-## Expanding the ESLint configuration
+# Start the development server
+npm run dev
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### 2. Backend (FastAPI + Python)
+The backend processes CSV/Excel files using Pandas and OpenAI to generate automated data summaries, detect duplicates, and simulate business workflows (like Xero syncing).
+
+```bash
+# Navigate to the backend folder
+cd backend
+
+# Create a virtual environment (optional but recommended)
+python -m venv venv
+### Windows:
+venv\Scripts\activate
+### Mac/Linux:
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Set up OpenAI (Required for AI Summary generation)
+# Create a .env file inside the backend/ folder:
+echo "OPENAI_API_KEY=sk-your-key-here" > .env
+
+# Start the API server
+python main.py
+# (Runs on http://127.0.0.1:8000)
+```
+
+## Features
+- **Smart Data Auditing:** Automatically detects duplicates and missing fields across datasets.
+- **AI Summary:** Uses `gpt-4o-mini` to classify the uploaded dataset and generate a specific, row-aware summary (e.g., highlighting overdue invoices or flagging unpaid statuses).
+- **Graceful Fallbacks:** If the OpenAI API key is missing or fails, it falls back to a locally generated algorithmic Pandas summary.
+- **Automated Syncing:** Simulates syncing to external services by generating JSON invoice payloads locally in `backend/automated_invoices`.
+
+## Integration
+The FlowBridge React App is pre-configured to point to `http://127.0.0.1:8000` for analysis and syncing:
+- **`POST /analyze`**: For file uploads and AI auditing.
+- **`POST /sync`**: For final confirmation and payload delivery.
