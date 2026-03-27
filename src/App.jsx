@@ -21,7 +21,11 @@ const Card = ({ title, subtitle, icon: Icon, children, color = "blue", style, cl
 );
 
 const SettingsModal = ({ isOpen, onClose, config, onSave }) => {
-  const [localConfig, setLocalConfig] = useState(config);
+  const [localConfig, setLocalConfig] = useState(() => ({
+    analyzeUrl: config.analyzeUrl,
+    syncUrl: config.syncUrl,
+    adminEmail: config.adminEmail || ''
+  }));
 
   if (!isOpen) return null;
 
@@ -36,6 +40,17 @@ const SettingsModal = ({ isOpen, onClose, config, onSave }) => {
           <button className="btn-icon" onClick={onClose} aria-label="Close settings"><AlertCircle size={20} style={{ transform: 'rotate(45deg)' }} aria-hidden="true" /></button>
         </div>
         <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--text-secondary)' }}>Business Owner / Admin Email</label>
+            <input 
+              type="email" 
+              className="input-field" 
+              placeholder="owner@company.com"
+              value={localConfig.adminEmail} 
+              onChange={(e) => setLocalConfig({ ...localConfig, adminEmail: e.target.value })}
+            />
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Used for critical automation alerts and reports.</p>
+          </div>
           <div>
             <label style={{ display: 'block', fontSize: 13, fontWeight: 600, marginBottom: 6, color: 'var(--text-secondary)' }}>n8n Analyze Webhook URL</label>
             <input 
@@ -90,7 +105,8 @@ function App() {
     const saved = localStorage.getItem('flowbridge_config');
     return saved ? JSON.parse(saved) : { 
       analyzeUrl: import.meta.env?.VITE_ANALYZE_WEBHOOK || '', 
-      syncUrl: import.meta.env?.VITE_SYNC_WEBHOOK || '' 
+      syncUrl: import.meta.env?.VITE_SYNC_WEBHOOK || '',
+      adminEmail: ''
     };
   });
 
@@ -124,29 +140,42 @@ function App() {
     setStep(2);
     setError(null);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
+
     try {
       if (config.analyzeUrl) {
+        console.log(`--- POST request sent to: ${config.analyzeUrl} ---`);
         const formData = new FormData();
         formData.append('file', file);
-        const res = await fetch(config.analyzeUrl, { method: 'POST', body: formData });
+        const res = await fetch(config.analyzeUrl, { 
+          method: 'POST', 
+          body: formData,
+          signal: controller.signal 
+        });
+        clearTimeout(timeoutId);
+        
         if (res.ok) {
           const data = await res.json();
-          if (isMounted.current) setAnalysisData(data);
+          console.log("--- ANALYSIS DATA RECEIVED! ---", data);
+          setAnalysisData(data);
+          setStep(3);
+          console.log("--- STEP 3 ACTIVATED ---");
         } else {
-          throw new Error('Analyze webhook failed');
+          throw new Error(`Analyze failing: ${res.status}`);
         }
       } else {
-        await new Promise(r => setTimeout(r, 2000));
-        if (isMounted.current) setAnalysisData(MOCK_ANALYZE_RESPONSE);
-      }
-      if (isMounted.current) setStep(3);
-    } catch (err) {
-      console.error(err);
-      if (isMounted.current) {
-        setError('Analysis failed. Using mock data for demo.');
+        await new Promise(r => setTimeout(r, 1000));
         setAnalysisData(MOCK_ANALYZE_RESPONSE);
         setStep(3);
       }
+    } catch (err) {
+      clearTimeout(timeoutId);
+      console.error('--- FETCH ERROR DETECTED ---', err);
+      // Failover to mock so the demo never stops
+      setError(`Notice: Using demo mode (Connectivity: ${err.message})`);
+      setAnalysisData(MOCK_ANALYZE_RESPONSE);
+      setStep(3);
     }
   };
 
@@ -164,47 +193,43 @@ function App() {
   const handleSync = async () => {
     setStep(4);
     setError(null);
+    console.log(`--- SYNC SIGNAL SENT to ${config.syncUrl} ---`);
+
     try {
       if (config.syncUrl) {
         const res = await fetch(config.syncUrl, { 
           method: 'POST', 
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(analysisData)
+          body: JSON.stringify(analysisData) 
         });
+        
         if (res.ok) {
           const data = await res.json();
-          if (!isMounted.current) return;
+          console.log("--- SYNC DATA RECEIVED! ---", data);
           setSyncData(data);
           addHistory({
             id: Date.now(),
-            entity: analysisData.detected_entity,
+            entity: analysisData?.detected_entity || 'Sync Task',
             action: 'Synced to Xero',
             time: new Date().toLocaleTimeString(),
             status: 'Success'
           });
+          setStep(5);
         } else {
-          throw new Error('Sync webhook failed');
+          throw new Error(`Sync failed: ${res.status}`);
         }
       } else {
-        await new Promise(r => setTimeout(r, 2000));
-        if (!isMounted.current) return;
-        setSyncData(MOCK_SYNC_RESPONSE);
-        addHistory({
-          id: Date.now(),
-          entity: analysisData.detected_entity,
-          action: 'Synced (Mock)',
-          time: new Date().toLocaleTimeString(),
-          status: 'Success'
-        });
-      }
-      if (isMounted.current) setStep(5);
-    } catch (err) {
-      console.error(err);
-      if (isMounted.current) {
-        setError('Sync failed. Using mock data for demo.');
+        await new Promise(r => setTimeout(r, 1500));
         setSyncData(MOCK_SYNC_RESPONSE);
         setStep(5);
       }
+      console.log("--- FINAL STEP 5 ACTIVATED ---");
+    } catch (err) {
+      console.error('--- SYNC ERROR ---', err);
+      // Failover to mock so the demo never stops
+      setSyncData(MOCK_SYNC_RESPONSE);
+      setStep(5);
+      setError(`Notice: Force-Sync triggered (Backend: ${err.message})`);
     }
   };
 
@@ -341,10 +366,13 @@ function App() {
                           <td style={{ fontWeight: 600 }}>{m.mapped_to}</td>
                           <td>
                             <div className="flex-center gap-2" style={{ justifyContent: 'flex-end' }}>
-                              <div className="confidence-bar" style={{ maxWidth: 80 }}>
-                                <div className="confidence-fill" style={{ width: `${m.confidence}%` }}></div>
+                              <div className="confidence-bar" style={{ width: '100px', height: '6px', backgroundColor: 'rgba(255,255,255,0.05)' }}>
+                                <div className="confidence-fill" style={{ 
+                                  width: `${m.confidence * 100}%`,
+                                  background: m.confidence > 0.9 ? 'var(--accent-2)' : 'var(--accent-3)' 
+                                }}></div>
                               </div>
-                              <span style={{ fontSize: 12, fontWeight: 700, width: 32 }}>{m.confidence}%</span>
+                              <span style={{ fontSize: 12, fontWeight: 700, width: 38, textAlign: 'right' }}>{(m.confidence * 100).toFixed(0)}%</span>
                             </div>
                           </td>
                         </tr>
@@ -411,9 +439,14 @@ function App() {
                 </div>
               </div>
             </div>
-                <button className="btn reset-btn" onClick={handleReset}>
-                   Run Another Task
-                </button>
+                <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+                  <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => window.open(config.syncUrl, '_blank')}>
+                     <FileSpreadsheet size={16} style={{ marginRight: 8 }} /> Download PDF Invoice
+                  </button>
+                  <button className="btn" style={{ flex: 1, background: 'var(--bg-surface)', border: '1px solid var(--border-glass)' }} onClick={handleReset}>
+                     Start New Batch
+                  </button>
+                </div>
               </Card>
             )}
           </div>
@@ -446,7 +479,7 @@ function App() {
         </div>
       </main>
       <footer>
-        <span>FlowBridge</span> — AI + n8n automation bridge · v1.0.4-beta
+        <span>FlowBridge</span> — AI automation bridge · v1.0.4-beta
       </footer>
     </>
   );
