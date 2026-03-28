@@ -1,16 +1,17 @@
-# FlowBridge
+# FlowBridge — AI Automation Gateway
 
-FlowBridge is an intelligent data ingestion and processing application. It consists of a React frontend for file dragging, mapping, and reviewing, and a Python FastAPI backend for AI-powered auditing, duplicate detection, and automated syncing.
+FlowBridge is a premium, intelligent data ingestion and processing platform. It features a stunning **White & Light Blue** professional theme and a robust local architecture that combines a high-performance React frontend with a powerful FastAPI backend for AI-powered auditing and automated business workflows.
 
 ## Project Structure
 
-- `src/` - React frontend (Vite, Tailwind-like custom CSS)
-- `backend/` - Python FastAPI backend
+- `index.html` - Premium Landing Page (Standalone)
+- `src/` - React Dashboard (Vite, Modern UI)
+- `backend/` - Python FastAPI backend (AI Logic & SMTP)
 
 ## 🚀 Setup Instructions
 
 ### 1. Frontend (React + Vite)
-The front end handles file uploads, mapping verification, and the sync confirmation UI.
+The frontend serves both the landing page and the dashboard. It is pre-configured to proxy API requests to the backend.
 
 ```bash
 # Install dependencies
@@ -18,16 +19,17 @@ npm install
 
 # Start the development server
 npm run dev
+# (Runs on http://localhost:3000)
 ```
 
 ### 2. Backend (FastAPI + Python)
-The backend processes CSV/Excel files using Pandas and OpenAI to generate automated data summaries, detect duplicates, and simulate business workflows (like Xero syncing).
+The backend handles deep data auditing using OpenAI and processes invoice delivery via Gmail SMTP.
 
 ```bash
 # Navigate to the backend folder
 cd backend
 
-# Create a virtual environment (optional but recommended)
+# Create and activate virtual environment
 python -m venv venv
 ### Windows:
 venv\Scripts\activate
@@ -37,22 +39,18 @@ source venv/bin/activate
 # Install dependencies
 pip install -r requirements.txt
 
-# Set up OpenAI (Required for AI Summary generation)
-# Create a .env file inside the backend/ folder:
-echo "OPENAI_API_KEY=sk-your-key-here" > .env
-
 # Start the API server
 python main.py
 # (Runs on http://127.0.0.1:8000)
 ```
 
 ## Features
-- **Smart Data Auditing:** Automatically detects duplicates and missing fields across datasets.
-- **AI Summary:** Uses `gpt-4o-mini` to classify the uploaded dataset and generate a specific, row-aware summary (e.g., highlighting overdue invoices or flagging unpaid statuses).
-- **Graceful Fallbacks:** If the OpenAI API key is missing or fails, it falls back to a locally generated algorithmic Pandas summary.
-- **Automated Syncing:** Simulates syncing to external services by generating JSON invoice payloads locally in `backend/automated_invoices`.
+- **Modern "White & Sky Blue" Aesthetic:** A clean, professional UI optimized for hackathon-winning demos.
+- **AI-Powered Data Auditing:** Automatically detects duplicates, classifies datasets, and generates row-aware summaries using `gpt-4o-mini`.
+- **Integrated API Proxy:** Uses Vite's internal proxy to route `/api` requests to the backend on port 8000, eliminating CORS issues.
+- **Automated Workflow Execution:** Sends real-world emails to customers with unpaid records directly from the audit report.
 
 ## Integration
-The FlowBridge React App is pre-configured to point to `http://127.0.0.1:8000` for analysis and syncing:
-- **`POST /analyze`**: For file uploads and AI auditing.
-- **`POST /sync`**: For final confirmation and payload delivery.
+The system is unified via the Vite dev server at **port 3000**:
+- **Landing Page & Wizard**: [http://localhost:3000/](http://localhost:3000/)
+- **API Proxy**: All frontend calls to `/api` are automatically routed to the backend for seamless communication.
