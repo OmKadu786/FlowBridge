@@ -95,8 +95,8 @@ function App() {
   const [config, setConfig] = useState(() => {
     const saved = localStorage.getItem('flowbridge_config');
     return saved ? JSON.parse(saved) : { 
-      analyzeUrl: import.meta.env?.VITE_ANALYZE_WEBHOOK || 'http://127.0.0.1:8000/analyze', 
-      syncUrl: import.meta.env?.VITE_SYNC_WEBHOOK || 'http://127.0.0.1:8000/sync',
+      analyzeUrl: import.meta.env?.VITE_ANALYZE_WEBHOOK || '/api/analyze', 
+      syncUrl: import.meta.env?.VITE_SYNC_WEBHOOK || '/api/sync',
       adminEmail: ''
     };
   });

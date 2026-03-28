@@ -7,47 +7,47 @@
 }
 
 :root {
-  /* Core palette — deep navy / electric violet / cyan accent */
-  --bg-base: #0b0e17;
-  --bg-surface: #111827;
-  --bg-elevated: #1a2035;
-  --bg-glass: rgba(17, 24, 55, 0.55);
-  --border-glass: rgba(255, 255, 255, 0.08);
-  --border-subtle: rgba(255, 255, 255, 0.06);
+  /* Core palette — Professional Light Mode / Sky Blue Accents */
+  --bg-base: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-elevated: #f1f5f9;
+  --bg-glass: rgba(255, 255, 255, 0.7);
+  --border-glass: rgba(0, 0, 0, 0.06);
+  --border-subtle: rgba(0, 0, 0, 0.04);
 
-  --accent-1: #6366f1;       /* indigo-500 */
-  --accent-2: #818cf8;       /* indigo-400 */
-  --accent-3: #06b6d4;       /* cyan-500 */
-  --accent-glow: rgba(99, 102, 241, 0.35);
+  --accent-1: #0284c7;       /* sky-600 */
+  --accent-2: #3b82f6;       /* blue-500 */
+  --accent-3: #0ea5e9;       /* sky-500 */
+  --accent-glow: rgba(2, 132, 199, 0.1);
 
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --text-inverse: #0f172a;
+  --text-primary: #0f172a;   /* slate-900 */
+  --text-secondary: #475569; /* slate-600 */
+  --text-muted: #94a3b8;     /* slate-400 */
+  --text-inverse: #ffffff;
 
-  --green-500: #22c55e;
-  --green-600: #16a34a;
-  --green-400: #4ade80;
-  --green-900: rgba(22, 163, 74, 0.15);
-  --green-border: rgba(34, 197, 94, 0.25);
+  --green-500: #10b981;
+  --green-600: #059669;
+  --green-400: #34d399;
+  --green-900: rgba(16, 185, 129, 0.08);
+  --green-border: rgba(16, 185, 129, 0.15);
 
   --red-500: #ef4444;
-  --red-900: rgba(239, 68, 68, 0.12);
-  --red-border: rgba(239, 68, 68, 0.25);
+  --red-900: rgba(239, 68, 68, 0.08);
+  --red-border: rgba(239, 68, 68, 0.15);
 
   --amber-500: #f59e0b;
-  --amber-900: rgba(245, 158, 11, 0.12);
-  --amber-border: rgba(245, 158, 11, 0.3);
+  --amber-900: rgba(245, 158, 11, 0.08);
+  --amber-border: rgba(245, 158, 11, 0.2);
 
   --radius-sm: 10px;
   --radius: 14px;
   --radius-lg: 20px;
   --radius-xl: 28px;
 
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-  --shadow-lg: 0 16px 64px rgba(99, 102, 241, 0.15);
-  --shadow-glow: 0 0 30px rgba(99, 102, 241, 0.2);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-glow: 0 0 20px rgba(2, 132, 199, 0.08);
 
   --transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -83,7 +83,7 @@ body {
 
 /* ——— Header ——— */
 .header {
-  background: rgba(11, 14, 23, 0.8);
+  background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   padding: 0 24px;
@@ -139,8 +139,8 @@ body {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(99, 102, 241, 0.12) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 30% 80%, rgba(6, 182, 212, 0.06) 0%, transparent 50%);
+    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(59, 130, 246, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 30% 80%, rgba(14, 165, 233, 0.05) 0%, transparent 50%);
   pointer-events: none;
 }
 .hero::after {
@@ -285,8 +285,8 @@ body {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(6px);
+  background: rgba(15, 23, 42, 0.2);
+  backdrop-filter: blur(4px);
   z-index: 2000;
   padding: 20px;
 }
