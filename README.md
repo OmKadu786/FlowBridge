@@ -1,56 +1,69 @@
 # FlowBridge — AI Automation Gateway
 
-FlowBridge is a premium, intelligent data ingestion and processing platform. It features a stunning **White & Light Blue** professional theme and a robust local architecture that combines a high-performance React frontend with a powerful FastAPI backend for AI-powered auditing and automated business workflows.
+FlowBridge is a premium, intelligent data ingestion and automation platform designed to bridge the gap between raw data and actionable business workflows. FlowBridge leverages a high-performance React frontend and a robust FastAPI backend to provide AI-powered auditing, data reconciliation, and automated communications.
 
-## Project Structure
+## 🌟 Key Features
 
-- `index.html` - Premium Landing Page (Standalone)
-- `src/` - React Dashboard (Vite, Modern UI)
-- `backend/` - Python FastAPI backend (AI Logic & SMTP)
+- **AI-Powered Data Auditing**: Automatically analyze complex datasets (CSV, XLS, XLSX) for duplicates, missing fields, and anomalies using GPT-4o-mini.
+- **Strategic Business Insights**: Get real-time summaries of financial data in Indian Rupees (₹) and categorical breakdowns of business processes.
+- **Smart Reconciliation**: Intelligently identify and reconcile duplicate records into a unified master view.
+- **Automated Workflow Execution**: Trigger real-world events like automated invoicing and email reminders directly from the audit reports.
+- **Live Activity Log**: Maintain a local, persistent feed of all data synchronization and automation activities.
+- **Configurable Backend Integration**: Seamlessly switch between local and cloud-based API endpoints with a built-in proxy and dashboard settings.
 
-## 🚀 Setup Instructions
+## 🏗️ Technical Architecture
 
-### 1. Frontend (React + Vite)
-The frontend serves both the landing page and the dashboard. It is pre-configured to proxy API requests to the backend.
+- **Frontend**: Built with **React 19** and **Vite**, utilizing **Lucide React** for premium iconography and a custom glassmorphic UI system.
+- **Backend**: Powering logic with **FastAPI** (Python), integrating **Pandas** for high-efficiency data processing and **OpenAI** for strategic AI auditing.
+- **Automation**: Integrated **SMTP** (Gmail/SendGrid compatible) for enterprise-grade automated notifications.
+
+---
+
+## 🚀 Getting Started
+
+### 1. Prerequisites
+- **Node.js** (v18+)
+- **Python** (v3.9+)
+- **OpenAI API Key** (for AI Auditor)
+- **SMTP Credentials** (for automated invoicing)
+
+### 2. Frontend Configuration
+The frontend serves as the primary dashboard and is pre-configured with a Vite proxy for seamless API communication.
 
 ```bash
-# Install dependencies
+# Navigate to project root
 npm install
 
 # Start the development server
 npm run dev
-# (Runs on http://localhost:3000)
+# Dashboard launches on http://localhost:3000
 ```
 
-### 2. Backend (FastAPI + Python)
-The backend handles deep data auditing using OpenAI and processes invoice delivery via Gmail SMTP.
+### 3. Backend Setup
+The backend handles deep data auditing and processing.
 
 ```bash
-# Navigate to the backend folder
+# Navigate to backend folder
 cd backend
 
-# Create and activate virtual environment
+# Setup virtual environment
 python -m venv venv
-### Windows:
-venv\Scripts\activate
-### Mac/Linux:
-source venv/bin/activate
+# Windows: venv\Scripts\activate | Mac/Linux: source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
 
 # Start the API server
 python main.py
-# (Runs on http://127.0.0.1:8000)
-```
+# Runs on http://127.0.0.1:8000
 
-## Features
-- **Modern "White & Sky Blue" Aesthetic:** A clean, professional UI optimized for hackathon-winning demos.
-- **AI-Powered Data Auditing:** Automatically detects duplicates, classifies datasets, and generates row-aware summaries using `gpt-4o-mini`.
-- **Integrated API Proxy:** Uses Vite's internal proxy to route `/api` requests to the backend on port 8000, eliminating CORS issues.
-- **Automated Workflow Execution:** Sends real-world emails to customers with unpaid records directly from the audit report.
 
-## Integration
-The system is unified via the Vite dev server at **port 3000**:
-- **Landing Page & Wizard**: [http://localhost:3000/](http://localhost:3000/)
-- **API Proxy**: All frontend calls to `/api` are automatically routed to the backend for seamless communication.
+## 📂 Project Structure
+
+- `src/` — React application source code and modern UI components.
+- `backend/` — FastAPI application, AI logic, and automation handlers.
+- `public/` — Static assets and global resources.
+- `index.html` — High-performance entry point.
+
+---
+*FlowBridge — Consolidating enterprise data into seamless workflows.*
