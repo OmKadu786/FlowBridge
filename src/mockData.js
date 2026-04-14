@@ -29,3 +29,37 @@ export const MOCK_SYNC_RESPONSE = {
   email_sent_to: "alice@example.com",
   pdf_path: "./invoices/invoice_INV-2024-00812.pdf",
 };
+
+export const MOCK_CLEAN_RESPONSE = {
+  health_score: 85,
+  columns_before: ["cust_name", "email_addr", "inv_amt", "status", "date"],
+  columns_after: ["Customer Name", "Email Address", "Invoice Amount", "Status", "Date"],
+  column_mapping: { cust_name: "Customer Name", email_addr: "Email Address", inv_amt: "Invoice Amount" },
+  preview_before: [
+    { cust_name: "Alice Johnson", email_addr: "ALICE@example.com", inv_amt: "4200", status: "Paid", date: "2024-01-15" },
+    { cust_name: "Bob Smith", email_addr: "bob@corp.com ", inv_amt: "3100", status: "Unpaid", date: "2024-02-20" },
+    { cust_name: "Alice Johnson", email_addr: "alice@example.com", inv_amt: "4200", status: "Paid", date: "2024-01-15" },
+    { cust_name: "Carol Davis", email_addr: "carol@biz.io", inv_amt: "", status: "Overdue", date: "invalid" },
+    { cust_name: "Dave Wilson", email_addr: "Dave@Work.COM", inv_amt: "5800", status: "Paid", date: "2024-03-10" },
+  ],
+  preview_after: [
+    { "Customer Name": "Alice Johnson", "Email Address": "alice@example.com", "Invoice Amount": "4200", Status: "Paid", Date: "2024-01-15" },
+    { "Customer Name": "Bob Smith", "Email Address": "bob@corp.com", "Invoice Amount": "3100", Status: "Unpaid", Date: "2024-02-20" },
+    { "Customer Name": "Carol Davis", "Email Address": "carol@biz.io", "Invoice Amount": "N/A", Status: "Overdue", Date: "NaT" },
+    { "Customer Name": "Dave Wilson", "Email Address": "dave@work.com", "Invoice Amount": "5800", Status: "Paid", Date: "2024-03-10" },
+  ],
+  total_rows: 47,
+  total_before: 50,
+  duplicates_removed: 3,
+  nulls_filled: 4,
+  cleaning_rules: ["lowercase_emails", "parse_dates:date", "drop_duplicates", "fill_nulls"],
+};
+
+export const MOCK_ASK_RESPONSE = {
+  answer: "Based on the dataset, the total revenue from all invoices is ₹47,500.00. This includes both paid and unpaid records.",
+  rows: [
+    { "Customer Name": "Dave Wilson", "Invoice Amount": "5800", Status: "Paid" },
+    { "Customer Name": "Alice Johnson", "Invoice Amount": "4200", Status: "Paid" },
+    { "Customer Name": "Bob Smith", "Invoice Amount": "3100", Status: "Unpaid" },
+  ],
+};

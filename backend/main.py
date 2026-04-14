@@ -1,8 +1,13 @@
 import os
+import sys
 import json
 import asyncio
 import smtplib
 from email.mime.text import MIMEText
+
+# Fix for Windows console emoji printing
+sys.stdout.reconfigure(encoding='utf-8')
+
 from email.mime.multipart import MIMEMultipart
 import pandas as pd
 from typing import Optional, List
@@ -39,6 +44,14 @@ class SyncRequest(BaseModel):
     recommended_record: dict
     admin_email: Optional[str] = ""
     unpaid_records: Optional[list] = []
+
+
+# --- GLOBAL DATA STORE (for /ask endpoint) ---
+GLOBAL_DATA = {"df": None, "filename": None}
+
+
+class AskRequest(BaseModel):
+    question: str
 
 
 def build_pandas_summary(df, detected_duplicates):
@@ -353,6 +366,226 @@ async def sync_and_email(data: SyncRequest):
         "email_results": results,
         "status": "completed"
     }
+
+
+
+@app.post("/clean")
+async def clean_data(file: UploadFile = File(...)):
+    """Clean and standardize uploaded data using AI-guided rules."""
+    print(f"\n🧹 [FLOWBRIDGE CLEAN] {file.filename}")
+
+    # 1. Read file
+    filename = file.filename
+    if filename.endswith(".csv"):
+        try:
+            df = pd.read_csv(file.file)
+        except UnicodeDecodeError:
+            file.file.seek(0)
+            df = pd.read_csv(file.file, encoding='cp1252')
+    else:
+        df = pd.read_excel(file.file, engine='openpyxl')
+
+    columns_before = list(df.columns)
+    total_before = len(df)
+    preview_before = df.head(10).fillna("").astype(str).to_dict(orient="records")
+
+    # 2. Ask AI for cleaning rules (50 rows max)
+    column_mapping = {}
+    cleaning_rules = ["drop_duplicates", "fill_nulls"]
+
+    if client:
+        try:
+            sample = df.head(50).fillna("").astype(str).to_json(orient="records")
+            prompt = f"""Analyze this dataset with columns: {columns_before}
+
+Sample data (first 50 rows):
+{sample}
+
+Return a JSON object with:
+1. "column_mapping": a dict mapping current column names to clean, readable names (e.g., "cust_nm" -> "Customer Name"). Only include columns that need renaming.
+2. "cleaning_rules": an array of rule strings from this set:
+   - "lowercase_emails" (if there are email columns)
+   - "parse_dates:col1,col2" (if there are date columns — list the ORIGINAL column names after the colon)
+   - "drop_duplicates"
+   - "fill_nulls"
+
+Return ONLY valid JSON. Example:
+{{
+  "column_mapping": {{"cust_nm": "Customer Name", "eml": "Email"}},
+  "cleaning_rules": ["lowercase_emails", "parse_dates:order_date", "drop_duplicates", "fill_nulls"]
+}}"""
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You are a data cleaning expert. Return only valid JSON."},
+                    {"role": "user", "content": prompt}
+                ],
+                response_format={"type": "json_object"},
+                timeout=20.0
+            )
+            ai_rules = json.loads(response.choices[0].message.content)
+            column_mapping = ai_rules.get("column_mapping", {})
+            cleaning_rules = ai_rules.get("cleaning_rules", ["drop_duplicates", "fill_nulls"])
+            print(f"🤖 AI suggested: {len(column_mapping)} renames, {len(cleaning_rules)} rules")
+        except Exception as e:
+            print(f"⚠️ AI cleaning rules failed ({e}) — using defaults")
+
+    # 3. Execute cleaning with Pandas
+    # Rename columns
+    if column_mapping:
+        valid_mapping = {k: v for k, v in column_mapping.items() if k in df.columns}
+        df.rename(columns=valid_mapping, inplace=True)
+
+    # Drop duplicates
+    rows_before_dedup = len(df)
+    df.drop_duplicates(inplace=True)
+    duplicates_removed = rows_before_dedup - len(df)
+
+    # Lowercase + strip email columns
+    for col in df.columns:
+        if any(k in col.lower() for k in ['email', 'e-mail', 'mail']):
+            df[col] = df[col].astype(str).str.lower().str.strip()
+
+    # Parse date columns
+    for rule in cleaning_rules:
+        if rule.startswith("parse_dates") and ":" in rule:
+            date_cols = [c.strip() for c in rule.split(":", 1)[1].split(",")]
+            for dc in date_cols:
+                target = column_mapping.get(dc, dc)
+                if target in df.columns:
+                    df[target] = pd.to_datetime(df[target], errors='coerce')
+
+    # Count nulls before filling
+    nulls_filled = int(df.isnull().sum().sum())
+
+    # Fill all remaining nulls safely (avoiding Pandas 3.0 strict TypeError on float64)
+    for col in df.columns:
+        if df[col].isnull().any():
+            df[col] = df[col].astype(object).fillna("N/A")
+
+
+    columns_after = list(df.columns)
+    preview_after = df.head(10).astype(str).to_dict(orient="records")
+
+    # 4. Health score
+    bad_count = int(df.isin(["N/A", "", "nan", "NaT", "None"]).sum().sum())
+    remaining_dupes = int(df.duplicated().sum())
+    health_score = max(0, round(100 - (bad_count * 0.5) - (remaining_dupes * 2)))
+
+    # 5. Store in GLOBAL_DATA for /ask
+    GLOBAL_DATA["df"] = df.copy()
+    GLOBAL_DATA["filename"] = filename
+
+    print(f"✅ Clean complete: score={health_score}, dupes_removed={duplicates_removed}, nulls_filled={nulls_filled}")
+
+    return {
+        "health_score": health_score,
+        "columns_before": columns_before,
+        "columns_after": columns_after,
+        "column_mapping": column_mapping,
+        "preview_before": preview_before,
+        "preview_after": preview_after,
+        "total_rows": len(df),
+        "total_before": total_before,
+        "duplicates_removed": duplicates_removed,
+        "nulls_filled": nulls_filled,
+        "cleaning_rules": cleaning_rules
+    }
+
+
+@app.post("/ask")
+async def ask_data(data: AskRequest):
+    """Answer natural language questions about the cleaned data."""
+    if GLOBAL_DATA["df"] is None:
+        raise HTTPException(status_code=400, detail="No data loaded. Please clean a file first.")
+
+    df = GLOBAL_DATA["df"]
+    question = data.question
+    print(f"\n💬 [ASK] {question}")
+
+    # Build sample for AI (max 50 rows)
+    sample = df.head(50).astype(str).to_json(orient="records")
+    columns = list(df.columns)
+    dtypes = {col: str(df[col].dtype) for col in df.columns}
+
+    fallback = {"answer": "I couldn't process that question. Try asking about totals, counts, or filtering by specific values.", "rows": []}
+
+    if not client:
+        print("⚠️ No OpenAI client — returning fallback")
+        return fallback
+
+    try:
+        prompt = f"""You have a dataset with {len(df)} rows.
+Columns and types: {json.dumps(dtypes)}
+
+Sample (first 50 rows):
+{sample}
+
+User question: "{question}"
+
+Respond with JSON:
+{{
+  "answer": "A concise natural language answer to the question",
+  "operation": "filter" | "sum" | "count" | "top" | "none",
+  "column": "the exact column name to operate on",
+  "value": "the filter value if applicable"
+}}
+
+Guidelines:
+- For "total revenue" questions: use operation "sum" on the appropriate money/amount column
+- For "unpaid invoices" questions: use operation "filter" with the status column and value like "Unpaid"
+- For "top customers" questions: use operation "top" on a money/amount column
+- For counting questions: use operation "count"
+- Use EXACT column names from the dataset. Available columns: {columns}"""
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a data analyst. Return only valid JSON. Use exact column names from the dataset."},
+                {"role": "user", "content": prompt}
+            ],
+            response_format={"type": "json_object"},
+            timeout=15.0
+        )
+
+        ai_result = json.loads(response.choices[0].message.content)
+    except Exception as e:
+        print(f"❌ AI ask failed: {e}")
+        return fallback
+
+    # Execute the operation with Pandas
+    answer = ai_result.get("answer", "")
+    operation = ai_result.get("operation", "none")
+    column = ai_result.get("column", "")
+    value = ai_result.get("value", "")
+    result_rows = []
+
+    try:
+        if operation == "filter" and column and column in df.columns:
+            filtered = df[df[column].astype(str).str.contains(str(value), case=False, na=False)]
+            result_rows = filtered.head(20).astype(str).to_dict(orient="records")
+        elif operation == "sum" and column and column in df.columns:
+            numeric_col = pd.to_numeric(df[column], errors='coerce')
+            total = numeric_col.sum()
+            answer = f"{answer}\n\nTotal: ₹{total:,.2f}"
+        elif operation == "count" and column and column in df.columns:
+            if value:
+                count = len(df[df[column].astype(str).str.contains(str(value), case=False, na=False)])
+            else:
+                count = len(df)
+            answer = f"{answer}\n\nCount: {count}"
+        elif operation == "top" and column and column in df.columns:
+            numeric_col = pd.to_numeric(df[column], errors='coerce')
+            df_temp = df.copy()
+            df_temp["_sort_col"] = numeric_col
+            top = df_temp.nlargest(5, "_sort_col").drop(columns=["_sort_col"])
+            result_rows = top.astype(str).to_dict(orient="records")
+    except Exception as e:
+        print(f"⚠️ Pandas operation failed: {e}")
+        answer += f"\n\n(Could not execute data operation: {e})"
+
+    print(f"✅ Answer: {answer[:100]}...")
+    return {"answer": answer, "rows": result_rows}
 
 
 if __name__ == "__main__":
