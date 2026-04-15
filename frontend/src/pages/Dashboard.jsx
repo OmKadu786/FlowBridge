@@ -38,7 +38,7 @@ export default function Dashboard() {
       <div className="dash-greeting">Hey there, {store?.name || 'Admin'}.</div>
 
       {/* Main Chat Navigation Box */}
-      <div style={{ marginTop: 24, padding: '20px 24px', background: '#fff', borderRadius: 16, border: '1px solid #e5e5e5', display: 'flex', alignItems: 'center', gap: 12, cursor: 'text' }} onClick={() => setPage('chat')}>
+      <div style={{ marginTop: 24, marginBottom: 24, padding: '20px 24px', background: '#fff', borderRadius: 16, border: '1px solid #e5e5e5', display: 'flex', alignItems: 'center', gap: 12, cursor: 'text' }} onClick={() => setPage('chat')}>
         <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#7c3aed', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" style={{ width: 20, height: 20 }}><path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.3 24.3 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5"/></svg>
         </div>
@@ -53,15 +53,8 @@ export default function Dashboard() {
       {/* Quick action cards */}
       <div className="quick-cards">
         <div className="qcard">
-          <div className="qcard-img">
-            <div className="qcard-img-inner">
-              <div className="qcard-thumb">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#c9c9c9" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-              </div>
-              <div className="qcard-thumb-b">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#c9c9c9" strokeWidth="1.5"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10"/></svg>
-              </div>
-            </div>
+          <div className="qcard-img" style={{ overflow: 'hidden', padding: 0 }}>
+            <img src="https://images.unsplash.com/photo-1586880244406-556ebe35f282?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Inventory Management" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
           <div className="qcard-body">
             <div className="qcard-title">Add your first product</div>
@@ -73,15 +66,8 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="qcard">
-          <div className="qcard-img">
-            <div className="qcard-img-inner">
-              <div className="qcard-thumb">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#c9c9c9" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13l-2 2.3A1 1 0 006 17h11m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-              </div>
-              <div className="qcard-thumb-b">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#c9c9c9" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-              </div>
-            </div>
+          <div className="qcard-img" style={{ overflow: 'hidden', padding: 0 }}>
+            <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" alt="Point of Sale" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
           <div className="qcard-body">
             <div className="qcard-title">Start your first sale</div>

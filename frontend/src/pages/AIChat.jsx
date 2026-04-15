@@ -28,6 +28,19 @@ export default function AIChat() {
     setActiveId(fresh.id);
   };
 
+  const deleteChat = (e, id) => {
+    e.stopPropagation();
+    const updated = sessions.filter(s => s.id !== id);
+    if (updated.length === 0) {
+      const fresh = { id: Date.now(), title: 'New Conversation', msgs: [] };
+      setSessions([fresh]);
+      setActiveId(fresh.id);
+    } else {
+      setSessions(updated);
+      if (activeId === id) setActiveId(updated[0].id);
+    }
+  };
+
   const ask = async (e, directQ = null) => {
     if (e) e.preventDefault();
     const q = directQ || input.trim();
@@ -77,9 +90,14 @@ export default function AIChat() {
         </div>
         <div style={{ overflowY: 'auto', flex: 1, padding: '0 12px 16px' }}>
           {sessions.map(s => (
-            <button key={s.id} onClick={() => setActiveId(s.id)} style={{ width: '100%', textAlign: 'left', padding: '10px 12px', background: s.id === activeId ? '#ebebeb' : 'transparent', border: 'none', borderRadius: 8, cursor: 'pointer', color: s.id === activeId ? '#1a1a1a' : '#4a4a4a', fontWeight: s.id === activeId ? 600 : 500, fontSize: 13, marginBottom: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {s.title}
-            </button>
+            <div key={s.id} style={{ display: 'flex', alignItems: 'center', marginBottom: 4, background: s.id === activeId ? '#ebebeb' : 'transparent', borderRadius: 8 }}>
+              <button onClick={() => setActiveId(s.id)} style={{ flex: 1, textAlign: 'left', padding: '10px 12px', background: 'transparent', border: 'none', cursor: 'pointer', color: s.id === activeId ? '#1a1a1a' : '#4a4a4a', fontWeight: s.id === activeId ? 600 : 500, fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {s.title}
+              </button>
+              <button className="qrm" onClick={(e) => deleteChat(e, s.id)} style={{ marginRight: 8, opacity: s.id === activeId ? 1 : 0.4 }}>
+                &times;
+              </button>
+            </div>
           ))}
         </div>
       </div>

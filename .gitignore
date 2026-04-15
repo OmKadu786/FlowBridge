@@ -1,6 +1,0 @@
-.env
-backend/.env
-venv/
-__pycache__/
-automated_invoices/
-node_modules/
