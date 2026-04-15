@@ -4,12 +4,14 @@ FlowBridge is a premium, intelligent data ingestion and automation platform desi
 
 ## 🌟 Key Features
 
-- **AI-Powered Data Auditing**: Automatically analyze complex datasets (CSV, XLS, XLSX) for duplicates, missing fields, and anomalies using GPT-4o-mini.
+- **Modern SaaS Dashboard**: A clean, high-performance UI with a 12-column grid and glassmorphic aesthetics.
+- **AI-Powered Data Auditing**: Automatically analyze complex datasets for duplicates, missing fields, and anomalies using GPT-4o-mini.
+- **Automated Visualizations**: Rich, interactive charts (Pie/Bar) generated instantly to visualize your dataset distribution and trends.
+- **Context-Driven AI Chat**: Chat with your data using "Ask Your Data" – now with conversation history for more natural, intelligent querying.
 - **Strategic Business Insights**: Get real-time summaries of financial data in Indian Rupees (₹) and categorical breakdowns of business processes.
-- **Smart Reconciliation**: Intelligently identify and reconcile duplicate records into a unified master view.
-- **Automated Workflow Execution**: Trigger real-world events like automated invoicing and email reminders directly from the audit reports.
+- **Automated Workflow Execution**: Trigger real-world events like automated invoicing and email reminders directly from audit reports.
 - **Live Activity Log**: Maintain a local, persistent feed of all data synchronization and automation activities.
-- **Configurable Backend Integration**: Seamlessly switch between local and cloud-based API endpoints with a built-in proxy and dashboard settings.
+
 
 ## 🏗️ Technical Architecture
 
