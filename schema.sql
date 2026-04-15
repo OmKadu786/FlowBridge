@@ -61,6 +61,7 @@ create table if not exists orders (
   subtotal numeric not null default 0,
   tax numeric not null default 0,
   total numeric not null default 0,
+  status text not null default 'paid',
   customer_email text,
   created_at timestamptz not null default now()
 );

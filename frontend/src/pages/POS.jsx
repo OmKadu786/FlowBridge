@@ -7,6 +7,7 @@ export default function POS() {
   const [query, setQuery] = useState('');
   const [cart, setCart] = useState([]);
   const [email, setEmail] = useState('');
+  const [status, setStatus] = useState('paid');
   const [showSuccess, setShowSuccess] = useState(null);
   const [loaded, setLoaded] = useState(false);
 
@@ -61,6 +62,7 @@ export default function POS() {
         subtotal,
         tax: taxAmt,
         total,
+        status,
         customer_email: email.trim() || null,
       });
       await api.createLog({
@@ -166,10 +168,20 @@ export default function POS() {
             <div className="cline"><span>Subtotal</span><span>{fmt(subtotal)}</span></div>
             <div className="cline"><span>Tax ({store?.tax_rate || 0}%)</span><span>{fmt(taxAmt)}</span></div>
             <div className="ctotal"><span>Total</span><span>{fmt(total)}</span></div>
-            <div style={{ marginBottom: 10 }}>
+            
+            <div style={{ marginBottom: 14 }}>
               <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#4a4a4a', marginBottom: 5 }}>Customer email (optional)</label>
               <input className="inp" type="email" placeholder="customer@email.com" value={email} onChange={e => setEmail(e.target.value)} />
             </div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#4a4a4a', marginBottom: 8 }}>Payment Status</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button style={{ flex: 1, padding: '8px', border: status === 'paid' ? '1px solid #7c3aed' : '1px solid #e5e5e5', background: status === 'paid' ? '#f5f3ff' : '#fff', color: status === 'paid' ? '#7c3aed' : '#4a4a4a', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }} onClick={() => setStatus('paid')}>Paid upfront</button>
+                <button style={{ flex: 1, padding: '8px', border: status === 'due' ? '1px solid #ef4444' : '1px solid #e5e5e5', background: status === 'due' ? '#fef2f2' : '#fff', color: status === 'due' ? '#ef4444' : '#4a4a4a', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer' }} onClick={() => setStatus('due')}>Pay later (Due)</button>
+              </div>
+            </div>
+
             <button className="btn btn-primary" onClick={completeSale} style={{ width: '100%', justifyContent: 'center' }} disabled={cart.length === 0}>
               Complete order
             </button>

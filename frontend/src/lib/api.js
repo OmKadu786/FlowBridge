@@ -32,6 +32,7 @@ export const api = {
   listOrders: (storeId) => request(`/api/orders/?store_id=${storeId}`),
   createOrder: (data) => request('/api/orders/', { method: 'POST', body: JSON.stringify(data) }),
   sendInvoice: (orderId) => request(`/api/orders/${orderId}/email`, { method: 'POST' }),
+  sendReminder: (orderId) => request(`/api/orders/${orderId}/reminder`, { method: 'POST' }),
 
   // Customers
   listCustomers: (storeId) => request(`/api/customers/?store_id=${storeId}`),

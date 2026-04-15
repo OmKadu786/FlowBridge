@@ -12,6 +12,7 @@ import Inventory from './pages/Inventory';
 import POS from './pages/POS';
 import Orders from './pages/Orders';
 import Customers from './pages/Customers';
+import Payments from './pages/Payments';
 import Activity from './pages/Activity';
 
 // Global app context
@@ -82,6 +83,7 @@ export default function App() {
       case 'pos': return <POS />;
       case 'orders': return <Orders />;
       case 'customers': return <Customers />;
+      case 'payments': return <Payments />;
       case 'activity': return <Activity />;
       default: return <Dashboard />;
     }
