@@ -53,6 +53,34 @@ export const MOCK_CLEAN_RESPONSE = {
   duplicates_removed: 3,
   nulls_filled: 4,
   cleaning_rules: ["lowercase_emails", "parse_dates:date", "drop_duplicates", "fill_nulls"],
+  charts: [
+    {
+      id: "pie_Status",
+      type: "pie",
+      title: "Status Distribution",
+      data: [
+        { name: "Paid", value: 28 },
+        { name: "Unpaid", value: 12 },
+        { name: "Overdue", value: 7 },
+      ],
+      dataKey: "value",
+      nameKey: "name"
+    },
+    {
+      id: "bar_Invoice Amount",
+      type: "bar",
+      title: "Top by Invoice Amount",
+      data: [
+        { name: "Dave Wilson", value: 5800 },
+        { name: "Alice Johnson", value: 4200 },
+        { name: "Bob Smith", value: 3100 },
+        { name: "Carol Davis", value: 2750 },
+        { name: "Eve Brown", value: 1900 },
+      ],
+      dataKey: "value",
+      nameKey: "name"
+    }
+  ],
 };
 
 export const MOCK_ASK_RESPONSE = {

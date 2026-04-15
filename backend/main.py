@@ -52,6 +52,7 @@ GLOBAL_DATA = {"df": None, "filename": None}
 
 class AskRequest(BaseModel):
     question: str
+    history: Optional[List[dict]] = []
 
 
 def build_pandas_summary(df, detected_duplicates):
@@ -476,7 +477,10 @@ Return ONLY valid JSON. Example:
     GLOBAL_DATA["df"] = df.copy()
     GLOBAL_DATA["filename"] = filename
 
-    print(f"✅ Clean complete: score={health_score}, dupes_removed={duplicates_removed}, nulls_filled={nulls_filled}")
+    # 6. Generate chart data inline (avoids race conditions with separate endpoint)
+    charts = _generate_chart_data(df)
+
+    print(f"✅ Clean complete: score={health_score}, dupes_removed={duplicates_removed}, nulls_filled={nulls_filled}, charts={len(charts)}")
 
     return {
         "health_score": health_score,
@@ -489,8 +493,95 @@ Return ONLY valid JSON. Example:
         "total_before": total_before,
         "duplicates_removed": duplicates_removed,
         "nulls_filled": nulls_filled,
-        "cleaning_rules": cleaning_rules
+        "cleaning_rules": cleaning_rules,
+        "charts": charts
     }
+
+
+def _generate_chart_data(df, max_charts=6):
+    """Generate chart configs from a dataframe. Returns at most `max_charts` items."""
+    charts = []
+    JUNK_VALUES = {"N/A", "nan", "NaT", "None", "", "n/a", "none", "null"}
+    # Column names to skip for categorical pie charts (they look like data, not categories)
+    SKIP_NAME_KEYWORDS = ['email', 'e-mail', 'phone', 'address', 'id', 'date', 'url', 'link', 'description', 'notes', 'comment']
+
+    # 1. Categorical columns → Pie Charts
+    for col in df.columns:
+        if len(charts) >= max_charts:
+            break
+        if df[col].dtype != 'object':
+            continue
+        # Skip columns whose names suggest non-categorical data
+        if any(kw in col.lower() for kw in SKIP_NAME_KEYWORDS):
+            continue
+
+        # Filter out junk values before counting
+        clean_series = df[col][~df[col].astype(str).isin(JUNK_VALUES)]
+        nunique = clean_series.nunique()
+        if 2 <= nunique <= 12:
+            counts = clean_series.value_counts().head(8)
+            if counts.empty:
+                continue
+            data = [{"name": str(k), "value": int(v)} for k, v in counts.items()]
+            charts.append({
+                "id": f"pie_{col}",
+                "type": "pie",
+                "title": f"{col} Distribution",
+                "data": data,
+                "dataKey": "value",
+                "nameKey": "name"
+            })
+
+    # 2. Numeric columns → Bar Charts
+    # Recover numeric columns that the cleaner may have cast to object (via N/A fill)
+    numeric_candidates = {}
+    for col in df.columns:
+        if col.lower().endswith('id'):
+            continue
+        if df[col].dtype in ['int64', 'float64']:
+            numeric_candidates[col] = df[col]
+        elif df[col].dtype == 'object':
+            coerced = pd.to_numeric(df[col], errors='coerce')
+            if coerced.notna().sum() > len(df) * 0.5:  # At least half the rows are numeric
+                numeric_candidates[col] = coerced
+
+    # Find a grouping key: prefer name-like columns, fall back to any low-cardinality string column
+    name_col = next((c for c in df.columns if any(k in c.lower() for k in ['name', 'customer', 'client', 'vendor', 'product', 'company', 'employee'])), None)
+    if not name_col:
+        # Fallback: pick any string column with reasonable cardinality
+        for c in df.columns:
+            if df[c].dtype == 'object':
+                clean_vals = df[c][~df[c].astype(str).isin(JUNK_VALUES)]
+                n = clean_vals.nunique()
+                if 2 <= n <= 30:
+                    name_col = c
+                    break
+
+    if name_col and numeric_candidates:
+        for col, series in numeric_candidates.items():
+            if len(charts) >= max_charts:
+                break
+            total = series.sum()
+            if pd.isna(total) or total <= 0:
+                continue
+            temp_df = df[[name_col]].copy()
+            temp_df["_val"] = series
+            grouped = temp_df.groupby(name_col)["_val"].sum().reset_index()
+            grouped = grouped[grouped["_val"] > 0]
+            top = grouped.nlargest(7, "_val")
+            if top.empty:
+                continue
+            data = [{"name": str(row[name_col]), "value": round(float(row["_val"]), 2)} for _, row in top.iterrows()]
+            charts.append({
+                "id": f"bar_{col}",
+                "type": "bar",
+                "title": f"Top by {col}",
+                "data": data,
+                "dataKey": "value",
+                "nameKey": "name"
+            })
+
+    return charts
 
 
 @app.post("/ask")
@@ -501,7 +592,19 @@ async def ask_data(data: AskRequest):
 
     df = GLOBAL_DATA["df"]
     question = data.question
+    history = data.history
     print(f"\n💬 [ASK] {question}")
+
+    # Build history context
+    history_context = ""
+    if history:
+        history_context = "Previous Conversation Context:\n"
+        # Use up to last 4 messages to save context but keep prompt reasonable
+        for msg in history[-4:]:
+            role_label = "User" if msg.get("role") == "user" else "Assistant"
+            text = msg.get("text", "")
+            history_context += f"{role_label}: {text}\n"
+        history_context += "\n"
 
     # Build sample for AI (max 50 rows)
     sample = df.head(50).astype(str).to_json(orient="records")
@@ -521,6 +624,7 @@ Columns and types: {json.dumps(dtypes)}
 Sample (first 50 rows):
 {sample}
 
+{history_context}
 User question: "{question}"
 
 Respond with JSON:
