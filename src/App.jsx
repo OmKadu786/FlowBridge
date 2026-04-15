@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, CheckCircle2, AlertCircle, FileSpreadsheet, PlayCircle, Loader2, Sparkles, Send, Database, Search, Wand2, MessageCircle, ArrowRight, TrendingUp, Users } from 'lucide-react';
+import { Upload, CheckCircle2, AlertCircle, FileSpreadsheet, PlayCircle, Loader2, Sparkles, Send, Database, Search, Wand2, MessageCircle, ArrowRight, TrendingUp, Users, TriangleAlert } from 'lucide-react';
 import { MOCK_ANALYZE_RESPONSE, MOCK_SYNC_RESPONSE, MOCK_CLEAN_RESPONSE, MOCK_ASK_RESPONSE } from './mockData';
 import './index.css';
 
@@ -101,6 +101,7 @@ const PreviewTable = ({ data, maxRows = 5 }) => {
 function App() {
   const [file, setFile] = useState(null);
   const [step, setStep] = useState(1); // 1: Upload, 2: Cleaning, 3: CleanResults, 4: Analyzing, 5: AuditReport, 6: Syncing, 7: Done
+  const [sessionId, setSessionId] = useState(null);
   const [analysisData, setAnalysisData] = useState(null);
   const [syncData, setSyncData] = useState(null);
   const [error, setError] = useState(null);
@@ -153,6 +154,7 @@ function App() {
       if (res.ok) {
         const data = await res.json();
         setCleanData(data);
+        if (data.session_id) setSessionId(data.session_id);
         setStep(3);
       } else { throw new Error(`Status: ${res.status}`); }
     } catch (err) {
@@ -226,7 +228,7 @@ function App() {
       const res = await fetch('/api/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question })
+        body: JSON.stringify({ question, session_id: sessionId || "demo" })
       });
       if (res.ok) {
         const data = await res.json();
@@ -240,7 +242,7 @@ function App() {
 
   const handleReset = () => {
     setFile(null); setAnalysisData(null); setSyncData(null); setCleanData(null);
-    setError(null); setStep(1); setChatMessages([]); setChatInput('');
+    setError(null); setStep(1); setChatMessages([]); setChatInput(''); setSessionId(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -399,6 +401,25 @@ function App() {
                       <CheckCircle2 size={16} /> 
                       <div style={{ fontWeight: 600 }}>
                         Smart Reconciliation: Kept unified master record for <strong>{analysisData.recommended_record?.customer_name || 'Production'}</strong>.
+                      </div>
+                    </div>
+                  )}
+
+                  {analysisData.high_risk_clients && analysisData.high_risk_clients.length > 0 && (
+                    <div style={{ marginTop: 20, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: 12, padding: 16 }}>
+                      <div style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, marginBottom: 12 }}>
+                        <TriangleAlert size={18} /> SMART THREAT DETECTION
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        {analysisData.high_risk_clients.map((client, idx) => (
+                          <div key={idx} style={{ background: 'rgba(0,0,0,0.2)', padding: 12, borderRadius: 8 }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                              <span style={{ fontWeight: 600, color: 'white' }}>{client.client}</span>
+                              <span style={{ fontSize: 11, background: '#ef4444', color: 'white', padding: '2px 8px', borderRadius: 99, fontWeight: 800, textTransform: 'uppercase' }}>{client.risk_level || 'High'} RISK</span>
+                            </div>
+                            <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{client.reason}</div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}

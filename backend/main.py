@@ -3,12 +3,14 @@ import sys
 import json
 import asyncio
 import smtplib
+import uuid
 from email.mime.text import MIMEText
 
 # Fix for Windows console emoji printing
 sys.stdout.reconfigure(encoding='utf-8')
 
 from email.mime.multipart import MIMEMultipart
+from email.mime.application import MIMEApplication
 import pandas as pd
 from typing import Optional, List
 from fastapi import FastAPI, UploadFile, File, HTTPException
@@ -47,11 +49,12 @@ class SyncRequest(BaseModel):
 
 
 # --- GLOBAL DATA STORE (for /ask endpoint) ---
-GLOBAL_DATA = {"df": None, "filename": None}
+GLOBAL_DATA = {}
 
 
 class AskRequest(BaseModel):
     question: str
+    session_id: str
 
 
 def build_pandas_summary(df, detected_duplicates):
@@ -144,6 +147,44 @@ def extract_unpaid_records(df):
     return list(grouped.values())
 
 
+def generate_pdf_invoice(recipient_name, recipient_email, items):
+    try:
+        from fpdf import FPDF
+        import tempfile
+        import os
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", 'B', 16)
+        pdf.cell(200, 10, txt="FlowBridge Invoice Reminder", ln=True, align="C")
+        pdf.set_font("Arial", size=12)
+        pdf.cell(200, 10, txt=f"To: {recipient_name} ({recipient_email})", ln=True)
+        pdf.cell(200, 10, txt="Please review the following unpaid items:", ln=True)
+        
+        pdf.ln(10)
+        if items:
+            headers = list(items[0].keys())
+            pdf.set_font("Arial", 'B', 10)
+            col_width = 180 / max(len(headers), 1)
+            for h in headers:
+                pdf.cell(col_width, 10, str(h).encode('latin-1', 'replace').decode('latin-1')[:15], border=1)
+            pdf.ln()
+            pdf.set_font("Arial", size=10)
+            for item in items:
+                for h in headers:
+                    pdf.cell(col_width, 10, str(item.get(h, '')).encode('latin-1', 'replace').decode('latin-1')[:15], border=1)
+                pdf.ln()
+        
+        fd, temp_path = tempfile.mkstemp(suffix=".pdf")
+        os.close(fd)
+        pdf.output(temp_path)
+        with open(temp_path, "rb") as f:
+            pdf_bytes = f.read()
+        os.remove(temp_path)
+        return pdf_bytes
+    except Exception as e:
+        print(f"PDF Gen failed: {e}")
+        return None
+
 def send_invoice_email(recipient_name, recipient_email, items, sender_email):
     """Send a single HTML email listing all unpaid items for one customer."""
     # Build the items table rows
@@ -194,6 +235,13 @@ def send_invoice_email(recipient_name, recipient_email, items, sender_email):
     msg["From"] = sender_email
     msg["To"] = recipient_email
     msg.attach(MIMEText(html_body, "html"))
+
+    pdf_bytes = generate_pdf_invoice(recipient_name, recipient_email, items)
+    if pdf_bytes:
+        from email.mime.application import MIMEApplication
+        part = MIMEApplication(pdf_bytes, Name="Invoice.pdf")
+        part['Content-Disposition'] = 'attachment; filename="Invoice.pdf"'
+        msg.attach(part)
 
     try:
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
@@ -273,6 +321,7 @@ Then write an "ai_summary" as SHORT BULLET POINTS (•) covering EVERYTHING rele
 - If it has categories: show the distribution
 - Always mention: duplicates found, missing data, and any red flags
 - End with 1 line of strategic advice
+- Identify 2-3 high risk accounts or entities in danger of default, churn, or failure based on the data patterns. Provide brief reason.
 
 Be SPECIFIC — use actual names, values, and numbers from the data. No generic filler.
 
@@ -282,6 +331,7 @@ Return as JSON:
   "field_mappings": [{{ "source": "original_column", "mapped_to": "clean_label", "analyzed_count": {total_rows} }}],
   "ai_summary": "• point 1\\n• point 2\\n• point 3...",
   "recommended_record": {{}},
+  "high_risk_clients": [{{ "client": "Name", "reason": "why they are risk", "risk_level": "High" }}],
   "total_rows": {total_rows}
 }}"""
 
@@ -299,6 +349,7 @@ Return as JSON:
         ai_result["total_rows"] = total_rows
         ai_result["duplicates"] = detected_duplicates
         ai_result["unpaid_records"] = unpaid_records
+        ai_result["high_risk_clients"] = ai_result.get("high_risk_clients", [])
         
         print(f"✅ AI audit complete")
         return ai_result
@@ -473,12 +524,16 @@ Return ONLY valid JSON. Example:
     health_score = max(0, round(100 - (bad_count * 0.5) - (remaining_dupes * 2)))
 
     # 5. Store in GLOBAL_DATA for /ask
-    GLOBAL_DATA["df"] = df.copy()
-    GLOBAL_DATA["filename"] = filename
+    session_id = str(uuid.uuid4())
+    GLOBAL_DATA[session_id] = {
+        "df": df.copy(),
+        "filename": filename
+    }
 
-    print(f"✅ Clean complete: score={health_score}, dupes_removed={duplicates_removed}, nulls_filled={nulls_filled}")
+    print(f"✅ Clean complete: score={health_score}, dupes_removed={duplicates_removed}, nulls_filled={nulls_filled}, session={session_id}")
 
     return {
+        "session_id": session_id,
         "health_score": health_score,
         "columns_before": columns_before,
         "columns_after": columns_after,
@@ -496,10 +551,11 @@ Return ONLY valid JSON. Example:
 @app.post("/ask")
 async def ask_data(data: AskRequest):
     """Answer natural language questions about the cleaned data."""
-    if GLOBAL_DATA["df"] is None:
-        raise HTTPException(status_code=400, detail="No data loaded. Please clean a file first.")
+    if data.session_id not in GLOBAL_DATA:
+        raise HTTPException(status_code=400, detail="No data loaded or session expired. Please clean a file first.")
 
-    df = GLOBAL_DATA["df"]
+    session_data = GLOBAL_DATA[data.session_id]
+    df = session_data["df"]
     question = data.question
     print(f"\n💬 [ASK] {question}")
 
